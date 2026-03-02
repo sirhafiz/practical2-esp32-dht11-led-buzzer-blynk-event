@@ -1,0 +1,66 @@
+#define BLYNK_TEMPLATE_ID "MASUKKAN_TEMPLATE_ID_KAU"
+#define BLYNK_TEMPLATE_NAME "DHT11 Alert LED Buzzer"
+#define BLYNK_AUTH_TOKEN "MASUKKAN_AUTH_TOKEN_KAU"
+
+#include <WiFi.h>
+#include <BlynkSimpleEsp32.h>
+#include <DHT.h>
+
+#define DHTPIN 4
+#define DHTTYPE DHT11
+#define LED_PIN 27
+#define BUZZER_PIN 26
+
+char ssid[] = "NAMA_WIFI_KAU";
+char pass[] = "PASSWORD_WIFI_KAU";
+
+DHT dht(DHTPIN, DHTTYPE);
+bool temp_alert = false;
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("ESP32 DHT11 + LED + Buzzer + Blynk Alert");
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+  digitalWrite(BUZZER_PIN, LOW);
+  dht.begin();
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+  Serial.println("Sedang sambung ke Blynk...");
+}
+
+void loop() {
+  Blynk.run();
+  float suhu = dht.readTemperature();
+  float lembap = dht.readHumidity();
+
+  if (isnan(suhu) || isnan(lembap)) {
+    Serial.println("Gagal baca DHT11!");
+  } else {
+    Serial.print("Suhu: "); Serial.print(suhu);
+    Serial.print(" °C | Kelembapan: "); Serial.print(lembap);
+    Serial.print(" % | Alert aktif: "); Serial.println(temp_alert ? "YA" : "TIDAK");
+  }
+
+  Blynk.virtualWrite(V0, suhu);
+  Blynk.virtualWrite(V1, lembap);
+
+  if (suhu > 30.0) {
+    digitalWrite(LED_PIN, HIGH);
+    digitalWrite(BUZZER_PIN, HIGH);
+    if (!temp_alert) {
+      Blynk.logEvent("temp_alert", String("SUHU PANAS! ") + suhu + " °C");
+      Serial.println(">>> ALERT dihantar ke Blynk <<<");
+      temp_alert = true;
+    }
+  } else {
+    digitalWrite(LED_PIN, LOW);
+    digitalWrite(BUZZER_PIN, LOW);
+    if (temp_alert) {
+      Serial.println("Suhu dah turun → alert direset");
+      temp_alert = false;
+    }
+  }
+  delay(2000);
+}
