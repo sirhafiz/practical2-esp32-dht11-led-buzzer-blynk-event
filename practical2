@@ -49,9 +49,9 @@ void loop() {
 
   if (suhu > 30.0) { //jika suhu lebih 30
     digitalWrite(LED_PIN, HIGH);  //led on
-    digitalWrite(BUZZER_PIN, HIGH);    //led off
+    digitalWrite(BUZZER_PIN, HIGH);    //led on
     if (!temp_alert) {
-      Blynk.logEvent("temp_alert", String("SUHU PANAS! ") + suhu + " °C");
+      Blynk.logEvent("temp_high", String("SUHU PANAS! ") + suhu + " °C");
       Serial.println(">>> ALERT dihantar ke Blynk <<<");
       temp_alert = true;
     }
@@ -59,6 +59,7 @@ void loop() {
     digitalWrite(LED_PIN, LOW);
     digitalWrite(BUZZER_PIN, LOW);
     if (temp_alert) {
+       Blynk.logEvent("temp_low", String("SUHU normal! ") + suhu + " °C");
       Serial.println("Suhu dah turun → alert direset");
       temp_alert = false;
     }
